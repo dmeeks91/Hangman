@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hangman</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="node_modules/paper/dist/paper-full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Titan+One" rel="stylesheet">
+    <link rel="stylesheet" href="Assets/style.css">
+</head>
+<body>
+    <div class="panel panel-default">
+        <div class="panel-heading row">
+            <div class="col-sm-2">
+                <img src="Assets/sports.png" class="logo">
+            </div>
+            <div class="col-sm-7 titleDiv">
+                <h1 class="title">HANGMAN</h1>
+            </div>   
+            <div class="col-sm-3">
+                <table class="table">
+                    <thead>
+                        <td>Wins</td>
+                        <td>Losses</td>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id='winCount'></td>
+                            <td id='lossCount'></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>  
+        </div>
+        <div class="panel-body row">
+            <div class="col-sm-8">
+                <h1 id="keyWord"></h1>
+            </div>
+            <div class="col-sm-4">
+                <canvas id= "myCanvas"class="img-responsive" width="200" height="100"></canvas>
+                <span id="hangman"></span>
+            </div>
+        </div>
+
+    </div>
+    <script>  
+        paper.install(window);
+
+        window.onload=function()
+        {  
+            paper.setup('myCanvas');
+            var path = new Path();
+            path.strokeColor = 'black';
+            var start = new Point(100, 100);
+            path.moveTo(start);
+            path.lineTo(start.add([ 200, -50 ]));
+            view.draw();
+        } 
+        
+        var game = {
+            abc: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+            wordBank: ['basketball', 'volleyball', 'athlete', 'game', 'football', 'soccer', 'team', 'coach',
+                       'foul', 'scholarship', 'contract', 'referee', 'tennis', 'olympics', 'raquetball', 
+                       'squash', 'baseball', 'softball', 'opponent', 'championship', 'trophy', 'captain',
+                       'cheerleader', 'mascot', 'winner', 'recruit', 'sideline', 'benchwarmer', 'plays',
+                       'score', 'surfboard', 'frisbee', 'jockey', 'track', 'marathon', 'golf', 'rivalry',
+                       'swim', 'run', 'throw', 'homerun', 'medal', 'uniform', 'halftime', 'contest', 'meet',
+                       'race', 'competition', "hockey", "ski", "cyclist"
+                       ],
+            getWord: function() {
+                var newWord = "";
+                //make sure word hasn't been used yet
+                do {
+                    newWord = this.wordBank[Math.floor(Math.random() * this.wordBank.length)]
+                }
+                while(this.usedWords.indexOf(newWord)!=-1);
+                
+                //set up game
+                this.usedWords.push(newWord);
+                this.keyWord.value = newWord;
+                this.keyWord.letters = newWord.split('');
+                this.revealWord();
+            }, 
+            keyWord: {
+                        value:"",
+                        letters:[]
+                      },
+            guess: {
+                        letter:"",
+                        word:""
+                    },
+            usedWords: [],
+            usedLetters:{
+                            right:[],
+                            wrong:[]
+                        },
+            status: "guess",
+            movesLeft: 0,
+            winCount: 0,
+            lossCount: 0,
+            /* hangman: {
+                        orgin: {x:400, y:200},
+                        radius: 50,
+                        neck: orgin.y + radius,
+                        shoulders: neck + (radius*2.5),
+                        hand: neck + radius,
+                        hips: neck + (radius*5),
+                        foot: neck + (radius*8),
+                        left: orgin.x - (radius*2),
+                        right: orgin.x + (radius*2),
+                        parts: ['head','body','leftArm','rightArm','leftLeg','rightLeg','leftEye','rightEye','mouth'],
+
+                     }, */
+            isInArray: function (arr, str = this.guess.letter) {
+                return arr.indexOf(str) > -1;
+            },
+            isNewGuess: function () {
+                var chk1 = this.isInArray (this.usedLetters.right);
+                var chk2 = this.isInArray (this.usedLetters.wrong);
+                //if in neither array then true
+                return (!chk1 && !chk2);
+            },
+            guessLetter: function(str) {
+                this.guess.letter = str;
+                if (this.isInArray(this.abc)) //Check if the key pressed is a letter
+                {
+                    var correct = this.isInArray(this.keyWord.letters);
+                    var newGuess = this.isNewGuess();
+                    var action = correct?'right':'wrong';
+
+                    if (newGuess)
+                    {
+                        this.usedLetters[action].push(this.guess.letter);
+                        if (correct) 
+                        {
+                            this.revealWord();
+                        } else 
+                        {
+                            this.drawHangMan();
+                            this.movesLeft --;
+                        } 
+                        
+                        this.winStatus();
+                        
+                        switch (this.status)
+                        {
+                            case "win":
+                                //tell user they've won see if they want to play again
+                            break;
+
+                            case "lose":
+                                //tell user they've lost see if they want to play again
+                            break;
+
+                            default:
+                            break;
+                        }
+
+                    }
+                }
+                else
+                {
+                    var msg = "Did not press a letter!"
+                }
+            },
+            revealWord: function(){
+                var str = "",
+                    chk = "";
+
+                $.each(game.keyWord.letters, function(key, value) {
+                   str += (game.isInArray(game.usedLetters.right, value) ? value : '_') + ' ';
+                });
+
+                $('#keyWord').text(str.trim());
+
+                this.guess.word = str.replace(/\s+/g, '');//clear blank spaces                
+            },
+            drawHangMan: function() {},
+            winStatus: function() {
+                if (this.guess.word === this.keyWord)//win game
+                {
+                    this.status = "win";
+                }
+                else if (this.movesLeft === 0) //lose game
+                {
+                    this.status = "lose";
+                }
+                else
+                {
+                    this.status = "guess";
+                }
+                 
+            },
+            newGame: function() {
+                this.getWord();
+                this.guess.letter = "";
+                this.guess.word = "";
+                this.usedLetters.right = [];
+                this.usedLetters.wrong = [];
+                this.movesLeft = 9;
+                this.status = "guess";
+                $('#winCount').text(game.winCount);
+                $('#lossCount').text(game.lossCount);
+            }            
+        }
+
+        $(document).ready(function() {
+            game.newGame();
+            document.onkeyup = function(event) {
+                game.guessLetter(event.key);
+            }
+
+
+
+        });
+    </script>
+</body>
+</html>
