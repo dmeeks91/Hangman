@@ -1,9 +1,17 @@
 paper.install(window);
 $(document).ready(function() {
+    
     //Set canvas height
     $('#myCanvas').height($('#gameZone').height());
     $('#myCanvas').width($('#hangmanHolder').width());
     $('#wordHolder').height($('#gameZone').height());
+
+    //Create Audio elements
+    var winSound = document.createElement("audio");
+        winSound.setAttribute("src", "assets/winSound.mp3");
+
+    var loseSound = document.createElement("audio");
+        loseSound.setAttribute("src", "assets/loseSound.mp3");
 
     //Define canvas dimensions
     var canvas = {
@@ -280,6 +288,7 @@ $(document).ready(function() {
                             $('#modalMessage').html('<p>Congratulations You Won!</p>' +
                                                     '<p>Would you like to play another game?</p>');
                             this.setModalClass('#modalPanel',true);
+                            winSound.play();
                             $('#gameOverModal').modal('show');                                
                             break;
 
@@ -290,6 +299,7 @@ $(document).ready(function() {
                             $('#modalMessage').html('<p>Better luck next time!</p>' +
                                                     '<p>Would you like to play another game?</p>');
                             this.setModalClass('#modalPanel',false);
+                            loseSound.play();
                             $('#gameOverModal').modal('show');
                             break;
                         default:
@@ -374,6 +384,7 @@ $(document).ready(function() {
         }            
     }
 
+    
     $('#play').on('click',game.playAgain);
     $('#exit').on('click',function(){game.exit();}); // when I didn't call the function this way 'this' was equal the button and not game
 
