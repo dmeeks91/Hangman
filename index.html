@@ -11,6 +11,7 @@
     <script src="node_modules/paper/dist/paper-full.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Titan+One" rel="stylesheet">
     <link rel="stylesheet" href="Assets/style.css">
+    <script src="Assets/jquery.toaster.js"></script>
 </head>
 <body>
     <div class="container"> 
@@ -40,18 +41,47 @@
                 </div>                
             </div>
             <div class="panel-body row" id="gameZone">
-                <div class="col-sm-6" id="wordHolder">
-                    <h1 id="keyWord"></h1>
+                <div class="col-sm-7" id="wordHolder">
+                    <div class="row">
+                        <h1 id="keyWord"></h1>
+                    </div>
+                    <div class="row">
+                        <div class="panel panel-default" id="showGuesses">
+                            <div class="panel-heading">
+                                <h4>Incorrect Guesses</h4>
+                            </div>
+                            <div class="panel-body" id="pbLetters">
+                                <h4 id="wrongLetters"></h4>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-sm-6" id="hangmanHolder">
+                <div class="col-sm-5" id="hangmanHolder">
                     <canvas id= "myCanvas"></canvas>
                     <span id="hangman"></span>
                 </div>
             </div>
-    
+            <div class="modal fade" role="dialog" id="gameOverModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="panel" id = "modalPanel">
+                            <div class="panel-heading">
+                                <h4 id="modalTitle"></h4>
+                            </div>
+                            <div class="panel-body" id="modalMessage">
+                            </div>
+                            <div class="panel-footer">
+                                <button class="btn btn-default" id="play" onclick="game.playAgain()">Play Again</button>
+                                <button class="btn btn-default" id="exit" onclick="game.exit()">Exit</button>
+                            </div>
+                        </div>                        
+                    </div>                    
+                </div>
+            </div>
         </div>
     </div>    
     <script>  
+        //Install paper.js I used this to draw the stickman
         paper.install(window);
         //Set canvas height
         $('#myCanvas').height($('#gameZone').height());
@@ -195,12 +225,9 @@
                       }
         
         
-        //Onload function is where all canvas drawings are initialized
-        window.onload=function()
-        {  
+        //Onload function is where all paper.js canvas drawings are initialized
+        window.onload=function() {  
             paper.setup('myCanvas');
-            
-            //canvas.radius = (stand.hanger2.B - stand.hanger2.T)/2;
 
             //Initialize and draw stand
             for(var part in stand)
@@ -242,8 +269,7 @@
                         break;
                 }                               
             }
-        } 
-        
+        }       
         
         //Define Game Object
         var game = {
@@ -296,6 +322,11 @@
                 //if in neither array then true
                 return (!chk1 && !chk2);
             },
+            setModalClass: function(element, win) {
+                var add = (win)?'panel-success':'panel-danger';
+                var rmv = (win)?'panel-danger':'panel-success';
+                $(element).removeClass(rmv).addClass(add);
+            },
             guessLetter: function(str) {
                 this.guess.letter = str;
                 if (this.isInArray(this.abc)) //Check if the key pressed is a letter
@@ -310,10 +341,12 @@
                         if (correct) 
                         {
                             this.revealWord();
-                        } else 
+                        } 
+                        else 
                         {
-                            this.drawHangMan();
-                            this.movesLeft --;                                                        
+                            this.drawStickMan();
+                            this.movesLeft --;  
+                            $('#wrongLetters').text(this.usedLetters.wrong.join(', '));                                                      
                         } 
                         
                         this.winStatus();
@@ -321,22 +354,33 @@
                         switch (this.status)
                         {
                             case "win":
+                                this.winCount++
                                 //tell user they've won see if they want to play again
-                            break;
+                                $('#modalTitle').text('Game Over');
+                                $('#modalMessage').html('<p>Congratulations You Won!</p>' +
+                                                        '<p>Would you like to play another game?</p>');
+                                this.setModalClass('#modalPanel',true);
+                                $('#gameOverModal').modal('show');                                
+                                break;
 
                             case "lose":
+                                this.lossCount++
                                 //tell user they've lost see if they want to play again
-                            break;
-
+                                $('#modalTitle').text('Game Over');
+                                $('#modalMessage').html('<p>Better luck next time!</p>' +
+                                                        '<p>Would you like to play another game?</p>');
+                                this.setModalClass('#modalPanel', false);
+                                $('#gameOverModal').modal('show');
+                                break;
                             default:
-                            break;
+                                break;
                         }
 
                     }
                 }
                 else
                 {
-                    var msg = "Did not press a letter!"
+                    console.log("Did not press a letter!");
                 }
             },
             revealWord: function(){
@@ -351,14 +395,27 @@
 
                 this.guess.word = str.replace(/\s+/g, '');//clear blank spaces                
             },
-            drawHangMan: function() {
+            drawStickMan: function() {
                 var part = stickMan.parts[9 - this.movesLeft];
                 //need to handle differently for eyes
-                stickMan[part].obj.strokeColor = 'black';
-                
+                switch (part)
+                {
+                    case 'eyeL':
+                    case 'eyeR':
+                        stickMan[part+'1'].obj.strokeColor = 'black';
+                        stickMan[part+'2'].obj.strokeColor = 'black';
+                        break;
+                    default:
+                        stickMan[part].obj.strokeColor = 'black';   
+                } 
+            },
+            eraseStickMan: function() {
+                $.each(stickMan, function (index, part) {
+                    if (index != 'parts') stickMan[index].obj.strokeColor = 'white'; 
+                });
             },
             winStatus: function() {
-                if (this.guess.word === this.keyWord)//win game
+                if (this.guess.word === this.keyWord.value)//win game
                 {
                     this.status = "win";
                 }
@@ -372,27 +429,38 @@
                 }
                  
             },
-            newGame: function() {
-                this.getWord();
+            playAgain: function() {
+                this.newGame();
+                $('#gameOverModal').modal('hide');                
+            },
+            exit: function() {
+                $('#winCount').text(this.winCount);
+                $('#lossCount').text(this.lossCount);
+                $('#gameOverModal').modal('hide');
+            },
+            newGame: function() {                
                 this.guess.letter = "";
                 this.guess.word = "";
                 this.usedLetters.right = [];
-                this.usedLetters.wrong = [];
+                this.usedLetters.wrong = [];                
+                $('#wrongLetters').text('');
                 this.movesLeft = 9;
                 this.status = "guess";
-                $('#winCount').text(game.winCount);
-                $('#lossCount').text(game.lossCount);
+                this.eraseStickMan();
+                this.getWord();
+                $('#winCount').text(this.winCount);
+                $('#lossCount').text(this.lossCount);
             }            
         }
-
+        
+        //Start game for the first time and initialize on keyup event 
         $(document).ready(function() {
+            $('#gameOverModal').modal('hide');
             game.newGame();
-            document.onkeyup = function(event) {
+            document.onkeyup = function(event) 
+            {
                 game.guessLetter(event.key);
             }
-
-
-
         });
     </script>
 </body>

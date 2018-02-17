@@ -42,13 +42,29 @@ body{
     font-size: 70px;
 }
 
-.panel-body {
+#gameOverModal {
+    text-align: center;
+}
+
+#gameZone {
     padding: 15px;
     min-height: 650px;
 }
 
+#showGuesses{
+    text-align: center;
+    margin: auto;
+    margin-top: 50px;
+    max-width: 80%;
+}
+
+#pbLetters{
+    min-height: 100px;
+}
+
+#modalPanel{
+    margin-bottom: 0px;
+}
 .row {
-    margin-right: -15px;
-    margin-left: -15px;
-    height: 90%;
+    margin: auto;
 }
