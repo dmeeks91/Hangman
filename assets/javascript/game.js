@@ -240,6 +240,11 @@ $(document).ready(function() {
             //if in neither array then true
             return (!chk1 && !chk2);
         },
+        setModalClass: function(element, win) {
+            var add = (win)?'panel-success':'panel-danger';
+            var rmv = (win)?'panel-danger':'panel-success';
+            $(element).removeClass(rmv).addClass(add);
+        },
         guessLetter: function(str) {
             this.guess.letter = str;
             if (this.isInArray(this.abc)) //Check if the key pressed is a letter
@@ -274,15 +279,17 @@ $(document).ready(function() {
                             $('#modalTitle').text('Game Over');
                             $('#modalMessage').html('<p>Congratulations You Won!</p>' +
                                                     '<p>Would you like to play another game?</p>');
+                            this.setModalClass('#modalPanel',true);
                             $('#gameOverModal').modal('show');                                
                             break;
 
                         case "lose":
                             this.lossCount++
-                            //tell user they've lost see if they want to play again
+                            //tell user they've lost see if they want to play again                            
                             $('#modalTitle').text('Game Over');
                             $('#modalMessage').html('<p>Better luck next time!</p>' +
                                                     '<p>Would you like to play another game?</p>');
+                            this.setModalClass('#modalPanel',false);
                             $('#gameOverModal').modal('show');
                             break;
                         default:
@@ -347,8 +354,9 @@ $(document).ready(function() {
             $('#gameOverModal').modal('hide');                
         },
         exit: function() {
-            $('#winCount').text(this.winCount);
-            $('#lossCount').text(this.lossCount);
+            self = this;
+            $('#winCount').text(self.winCount);
+            $('#lossCount').text(self.lossCount);
             $('#gameOverModal').modal('hide');
         },
         newGame: function() {                
@@ -367,7 +375,7 @@ $(document).ready(function() {
     }
 
     $('#play').on('click',game.playAgain);
-    $('#exit').on('click',game.exit);
+    $('#exit').on('click',function(){game.exit();}); // when I didn't call the function this way 'this' was equal the button and not game
 
     $('#gameOverModal').modal('hide');
     game.newGame();
