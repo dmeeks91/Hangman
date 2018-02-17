@@ -13,54 +13,239 @@
     <link rel="stylesheet" href="Assets/style.css">
 </head>
 <body>
-    <div class="panel panel-default">
-        <div class="panel-heading row">
-            <div class="col-sm-2">
-                <img src="Assets/sports.png" class="logo">
+    <div class="container"> 
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-sm-2">
+                        <img src="Assets/sports.png" class="logo">
+                    </div>
+                    <div class="col-sm-7 titleDiv">
+                        <h1 class="title">HANGMAN</h1>
+                    </div>   
+                    <div class="col-sm-3">
+                        <table class="table">
+                            <thead>
+                                <td>Wins</td>
+                                <td>Losses</td>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id='winCount'></td>
+                                    <td id='lossCount'></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>  
+                </div>                
             </div>
-            <div class="col-sm-7 titleDiv">
-                <h1 class="title">HANGMAN</h1>
-            </div>   
-            <div class="col-sm-3">
-                <table class="table">
-                    <thead>
-                        <td>Wins</td>
-                        <td>Losses</td>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td id='winCount'></td>
-                            <td id='lossCount'></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>  
+            <div class="panel-body row" id="gameZone">
+                <div class="col-sm-6" id="wordHolder">
+                    <h1 id="keyWord"></h1>
+                </div>
+                <div class="col-sm-6" id="hangmanHolder">
+                    <canvas id= "myCanvas"></canvas>
+                    <span id="hangman"></span>
+                </div>
+            </div>
+    
         </div>
-        <div class="panel-body row">
-            <div class="col-sm-8">
-                <h1 id="keyWord"></h1>
-            </div>
-            <div class="col-sm-4">
-                <canvas id= "myCanvas"class="img-responsive" width="200" height="100"></canvas>
-                <span id="hangman"></span>
-            </div>
-        </div>
-
-    </div>
+    </div>    
     <script>  
         paper.install(window);
+        //Set canvas height
+        $('#myCanvas').height($('#gameZone').height());
+        $('#myCanvas').width($('#hangmanHolder').width());
+        $('#wordHolder').height($('#gameZone').height());
 
+        //Define canvas dimensions
+        var canvas = {
+                        T: $('#myCanvas').position().top,
+                        L: $('#myCanvas').position().left,
+                        H: $('#myCanvas').height(),
+                        W: $('#myCanvas').width(),                                            
+                     };
+        
+        //Define Stand Object
+        var stand = {
+                       base: {
+                                obj: {},
+                                T: canvas.T + (canvas.H * .8),
+                                L: canvas.L + (canvas.W * .1),
+                                H: canvas.H * .1,
+                                W: canvas.W * .8,  
+                             },
+                       pole: {
+                                obj: {},
+                                T: canvas.T + (canvas.H * .1),
+                                R: canvas.L + (canvas.W * .1),
+                                B: canvas.T + (canvas.H * .8),
+                                L: canvas.L + (canvas.W * .1)                                
+                             },
+                       hanger1: {
+                                    obj: {},
+                                    T: canvas.T + (canvas.H * .1),
+                                    R: canvas.L + (canvas.W * .5),
+                                    B: canvas.T + (canvas.H * .1),
+                                    L: canvas.L + (canvas.W * .095)                                    
+                                },
+                       hanger2: {
+                                    obj: {},
+                                    T: canvas.T + (canvas.H * .095),
+                                    R: canvas.L + (canvas.W * .5),
+                                    B: canvas.T + (canvas.H * .15),
+                                    L: canvas.L + (canvas.W * .5)
+                                }
+                    }
+
+        //Define variables of key points on stickman 
+        var radius = (stand.hanger2.B - stand.hanger2.T),
+            center = {x: stand.hanger2.L, y: stand.hanger2.B + radius},            
+            nose = center.x,
+            neck = center.y + radius,
+            shoulders = neck + (radius*2.5),
+            hand = neck + radius,
+            hips = neck + (radius*5),
+            foot = neck + (radius*8),
+            left = nose - (radius*2),
+            right = nose + (radius*2),
+            eye = {
+                    top: center.y - (radius/2), 
+                    bottom: center.y - (radius/4), 
+                    left: (radius/2), 
+                    right: (radius/4)
+                  }   
+        
+        //Define Stickman Object
+        var stickMan = {
+                        parts: ['head','body','armL','armR','legL','legR','eyeL','eyeR','mouth'], 
+                        head: {
+                                obj: {},                                
+                              },
+                        body: {
+                                obj: {},
+                                T: neck,
+                                R: nose,
+                                B: hips,
+                                L: nose
+                              },
+                        armL: {
+                                obj: {},
+                                T: shoulders,
+                                R: nose,
+                                B: hand,
+                                L: left
+                              },
+                        armR: {
+                                obj: {},
+                                T: shoulders,
+                                R: nose,
+                                B: hand,
+                                L: right
+                              },
+                        legL: {
+                                obj: {},
+                                T: hips,
+                                R: left,
+                                B: foot,
+                                L: nose
+                              },
+                        legR: {
+                                obj: {},
+                                T: hips,
+                                R: right,
+                                B: foot,
+                                L: nose
+                              },
+                        eyeL1: {
+                                obj: {},
+                                T: eye.top,
+                                R: nose - eye.right,
+                                B: eye.bottom,
+                                L: nose - eye.left
+                              },
+                        eyeL2: {
+                                obj: {},
+                                T: eye.top,
+                                R: nose - eye.left,
+                                B: eye.bottom,
+                                L: nose - eye.right
+                              },
+                        eyeR1: {
+                                obj: {},
+                                T: eye.top,
+                                R: nose + eye.right,
+                                B: eye.bottom,
+                                L: nose + eye.left
+                              },
+                        eyeR2: {
+                                obj: {},
+                                T: eye.top,
+                                R: nose + eye.left,
+                                B: eye.bottom,
+                                L: nose + eye.right 
+                              },
+                        mouth: {
+                                 obj: {},
+                                 T: center.y + (radius/2),
+                                 R: nose + eye.left,
+                                 B: center.y + (radius/2),
+                                 L: nose - eye.left
+                               } 
+                      }
+        
+        
+        //Onload function is where all canvas drawings are initialized
         window.onload=function()
         {  
             paper.setup('myCanvas');
-            var path = new Path();
-            path.strokeColor = 'black';
-            var start = new Point(100, 100);
-            path.moveTo(start);
-            path.lineTo(start.add([ 200, -50 ]));
-            view.draw();
+            
+            //canvas.radius = (stand.hanger2.B - stand.hanger2.T)/2;
+
+            //Initialize and draw stand
+            for(var part in stand)
+            {
+                switch (part)
+                {
+                    case 'base':
+                        stand[part].obj = new Path.Rectangle(new Rectangle ({
+                                                                                x: stand.base.L,
+                                                                                y: stand.base.T,
+                                                                                width: stand.base.W,
+                                                                                height: stand.base.H 
+                                                                            }));
+                        break;
+                    default:
+                        stand[part].obj = new Path(new Point(stand[part].L, stand[part].B),
+                                                   new Point(stand[part].R, stand[part].T));
+                        break;
+                }
+                stand[part].obj.strokeColor = 'black';
+                stand[part].obj.strokeWidth = 6;
+            }
+            
+            //Initailize hangman
+            for (var part in stickMan)
+            {
+                switch (part)
+                {
+                    case 'parts':
+                        break;
+                    case 'head':
+                        stickMan[part].obj = new Path.Circle(new Point(center.x, center.y), radius);
+                        stickMan[part].obj.strokeWidth = 3; 
+                        break;
+                    default: 
+                        stickMan[part].obj = new Path(new Point(stickMan[part].L, stickMan[part].T),
+                                                      new Point(stickMan[part].R, stickMan[part].B));
+                        stickMan[part].obj.strokeWidth = 3;                         
+                        break;
+                }                               
+            }
         } 
         
+        
+        //Define Game Object
         var game = {
             abc: 'abcdefghijklmnopqrstuvwxyz'.split(''),
             wordBank: ['basketball', 'volleyball', 'athlete', 'game', 'football', 'soccer', 'team', 'coach',
@@ -102,19 +287,6 @@
             movesLeft: 0,
             winCount: 0,
             lossCount: 0,
-            /* hangman: {
-                        orgin: {x:400, y:200},
-                        radius: 50,
-                        neck: orgin.y + radius,
-                        shoulders: neck + (radius*2.5),
-                        hand: neck + radius,
-                        hips: neck + (radius*5),
-                        foot: neck + (radius*8),
-                        left: orgin.x - (radius*2),
-                        right: orgin.x + (radius*2),
-                        parts: ['head','body','leftArm','rightArm','leftLeg','rightLeg','leftEye','rightEye','mouth'],
-
-                     }, */
             isInArray: function (arr, str = this.guess.letter) {
                 return arr.indexOf(str) > -1;
             },
@@ -141,7 +313,7 @@
                         } else 
                         {
                             this.drawHangMan();
-                            this.movesLeft --;
+                            this.movesLeft --;                                                        
                         } 
                         
                         this.winStatus();
@@ -179,7 +351,12 @@
 
                 this.guess.word = str.replace(/\s+/g, '');//clear blank spaces                
             },
-            drawHangMan: function() {},
+            drawHangMan: function() {
+                var part = stickMan.parts[9 - this.movesLeft];
+                //need to handle differently for eyes
+                stickMan[part].obj.strokeColor = 'black';
+                
+            },
             winStatus: function() {
                 if (this.guess.word === this.keyWord)//win game
                 {
